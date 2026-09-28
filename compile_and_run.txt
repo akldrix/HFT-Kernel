@@ -1,0 +1,6 @@
+1) i686-elf-gcc -c pci.c bump_alloc.c console.c kernel.c -std=c99 -ffreestanding -O2 -Wall -Wextra
+2) nasm -f elf32 boot.asm -o boot.o
+3) i686-elf-gcc -T kernel_main.ld -o mykernel.bin -ffreestanding -O2 -nostdlib boot.o kernel.o console.o pci.o bump_alloc.o -lgcc
+4) qemu-system-i386 -kernel mykernel.bin -device e1000,netdev=n1 -netdev user,id=n1
+
+
