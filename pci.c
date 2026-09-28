@@ -28,7 +28,14 @@ void pci_scan() {
 
       if (vendor == 0x8086 && device == 0x100E) {
         console_print("Successfuly found Intel e1000\n");
+        console_print("     Bus:");
+        console_print_hex(bus);
+        console_print(" | Slot: ");
+        console_print_hex(slot);
+        console_print("\n");
+        return;
       }
     }
   }
+  console_print("[PCI] ERROR! Cannot find the e1000 NIC");
 }
