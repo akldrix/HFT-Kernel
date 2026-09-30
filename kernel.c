@@ -1,5 +1,6 @@
 #include "bump_alloc.h"
 #include "console.h"
+#include "e1000.h"
 #include "pci.h"
 #include <stdbool.h>
 #include <stddef.h>
@@ -31,17 +32,26 @@ void kernel_main(void) {
   console_print_hex(0x8086);
   console_print("\n");
 
-  pci_scan();
+  // pci_scan();
+  //
+  // uint32_t *ptr1 = (uint32_t *)bump_alloc(&kernel_alloc, 64, 16);
+  //
+  // if (ptr1 == 0) {
+  //   console_print("[ERR] Failed to allocate memory\n");
+  //   return;
+  // } else {
+  //   console_print("[SUCCESS] Allocated 64 bytes successfuly!\n");
+  // }
+  uint8_t bus = 0;
+  uint8_t slot = 3;
 
-  uint32_t *ptr1 = (uint32_t *)bump_alloc(&kernel_alloc, 64, 16);
+  uintptr_t bar0 = get_pci_bar0(bus, slot, 0);
 
-  if (ptr1 == 0) {
-    console_print("[ERR] Failed to allocate memory\n");
-    return;
-  } else {
-    console_print("[SUCCESS] Allocated 64 bytes successfuly!\n");
-  }
+  enable_pci_bus_mastering(bus, slot, 0);
+
+  e1000_init(bar0, &kernel_alloc);
 
   while (1) {
+    e1000_poll_rx();
   }
 }
