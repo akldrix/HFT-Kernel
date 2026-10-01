@@ -51,7 +51,16 @@ void kernel_main(void) {
 
   e1000_init(bar0, &kernel_alloc);
 
+  // console_print("Entering the loop: \n");
+  // uint32_t heartbeat = 0;
+
   while (1) {
     e1000_poll_rx();
+
+    // heartbeat++;
+    // if (heartbeat == 10000000) {
+    //   console_print(".");
+    //   heartbeat = 0;
+    // }
   }
 }

@@ -41,10 +41,11 @@ void e1000_init(uintptr_t bar0, BumpAllocator *alloc) {
   e1000_write_reg(E1000_REG_RDH, 0);
   e1000_write_reg(E1000_REG_RDT, NUM_RX_DESCRIPTORS - 1);
 
-  uint32_t rctl = E1000_RCTL_EN | E1000_RCTL_BAM | E1000_RCTL_SECRC;
-  e1000_write_reg(E1000_REG_CTRL, rctl);
-  if (e1000_read_reg(E1000_REG_CTRL))
-    console_print("[e1000] Driver initialized!");
+  uint32_t rctl = E1000_RCTL_EN | E1000_RCTL_BAM | E1000_RCTL_UPE |
+                  E1000_RCTL_MPE | E1000_RCTL_SECRC;
+  e1000_write_reg(E1000_REG_RCTL, rctl);
+  if (e1000_read_reg(E1000_REG_RCTL))
+    console_print("[e1000] Driver initialized!\n");
 }
 
 void e1000_poll_rx() {

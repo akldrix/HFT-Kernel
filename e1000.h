@@ -28,7 +28,7 @@ typedef struct __attribute__((__packed__)) {
   uint64_t buffer_addr;
   uint16_t length;
   uint16_t checksum;
-  uint8_t status;
+  volatile uint8_t status;
   uint8_t errors;
   uint16_t special;
 } e1000_rx_desc;
