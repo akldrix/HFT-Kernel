@@ -62,3 +62,23 @@ void console_print_hex(uint32_t val) {
   }
   console_print(&buffer[i + 1]);
 }
+
+void console_print_dec(uint32_t val) {
+  if (val == 0) {
+    console_print("0");
+    return;
+  }
+
+  char buffer[8];
+  buffer[7] = '\0';
+  int i = 6;
+
+  while (val > 0 && i >= 0) {
+    int remainder = val % 10;
+    buffer[i] = '0' + remainder;
+
+    val /= 10;
+    i--;
+  }
+  console_print(&buffer[i + 1]);
+}

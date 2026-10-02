@@ -3,6 +3,19 @@
 #include "console.h"
 #include <stdint.h>
 
+#define ETHERTYPE_IPV4 0x0800
+#define ETHERTYPE_ARP 0x0806
+
+static inline uint16_t ntohs(uint16_t x) {
+  return (uint16_t)(((x & 0xFF) << 8) | ((x >> 8) & 0xFF));
+}
+
+typedef struct __attribute__((__packed__)) {
+  uint8_t dest_mac[6];
+  uint8_t src_mac[6];
+  uint16_t ethertype;
+} ethernet_header_t;
+
 static uintptr_t mmio_base = 0;
 static e1000_rx_desc *rx_ring = 0;
 static uint16_t rx_current_idx = 0;
@@ -52,11 +65,36 @@ void e1000_poll_rx() {
   if (rx_ring[rx_current_idx].status & 0x01) {
     uint16_t len = rx_ring[rx_current_idx].length;
 
+    uint8_t *packet_data =
+        (uint8_t *)(uintptr_t)rx_ring[rx_current_idx].buffer_addr;
+
     console_print("[NET] Size of received packet: ");
-    console_print_hex(len);
+    console_print_dec(len);
     console_print("\n");
 
+    ethernet_header_t *eth = (ethernet_header_t *)packet_data;
+
+    console_print("SRC MAC: ");
+    for (int i = 0; i < 6; i++) {
+      console_print_hex(eth->src_mac[i]);
+      if (i < 5)
+        console_print(":");
+    }
+    console_print("\n");
+
+    uint16_t protocol = ntohs(eth->ethertype);
+    if (protocol == ETHERTYPE_IPV4) {
+      console_print("Protocol: IPv4\n");
+    } else if (protocol == ETHERTYPE_ARP) {
+      console_print("Protocol: ARP\n");
+    } else {
+      console_print("Unknown protocol: (");
+      console_print_hex(protocol);
+      console_print(")\n");
+    }
+
     rx_ring[rx_current_idx].status = 0;
+
     uint16_t old_idx = rx_current_idx;
 
     rx_current_idx = (rx_current_idx + 1) % NUM_RX_DESCRIPTORS;
