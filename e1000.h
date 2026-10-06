@@ -40,6 +40,9 @@
 
 #define NUM_TX_DESCRIPTORS 256
 
+#define E1000_REG_RAL0 0x05400
+#define E1000_REG_RAH0 0x05404
+
 #define E1000_TX_CMD_EOP (1 << 0)
 #define E1000_TX_CMD_IFCS (1 << 1)
 #define E1000_TX_CMD_RS (1 << 3)

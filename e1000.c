@@ -24,7 +24,7 @@ static uint16_t rx_current_idx = 0;
 static e1000_tx_desc *tx_ring = 0;
 static uint16_t tx_current_idx = 0;
 
-static uint8_t my_mac[6] = {0x52, 0x55, 0xA, 0x0, 0x2, 0x2};
+static uint8_t my_mac[6] = {0};
 
 void e1000_write_reg(uint16_t reg, uint32_t value) {
   *(volatile uint32_t *)(mmio_base + reg) = value;
@@ -43,6 +43,16 @@ void e1000_init(uintptr_t bar0, BumpAllocator *alloc) {
     ;
 
   e1000_write_reg(E1000_REG_IMC, 0xFFFFFFFF);
+
+  uint32_t ral = e1000_read_reg(E1000_REG_RAL0);
+  uint32_t rah = e1000_read_reg(E1000_REG_RAH0);
+
+  my_mac[0] = (uint8_t)(ral & 0xFF);
+  my_mac[1] = (uint8_t)((ral >> 8) & 0xFF);
+  my_mac[2] = (uint8_t)((ral >> 16) & 0xFF);
+  my_mac[3] = (uint8_t)((ral >> 24) & 0xFF);
+  my_mac[4] = (uint8_t)(rah & 0xFF);
+  my_mac[5] = (uint8_t)((rah >> 8) & 0xFF);
 
   rx_ring = (e1000_rx_desc *)bump_alloc(
       alloc, sizeof(e1000_rx_desc) * NUM_RX_DESCRIPTORS, 16);
@@ -81,23 +91,48 @@ void e1000_init(uintptr_t bar0, BumpAllocator *alloc) {
   e1000_write_reg(E1000_REG_TDH, 0);
   e1000_write_reg(E1000_REG_TDT, 0);
 
-  e1000_write_reg(E1000_REG_TCTL, E1000_TCTL_EN | E1000_TCTL_PSP);
+  e1000_write_reg(E1000_REG_TCTL,
+                  E1000_TCTL_EN | E1000_TCTL_PSP | (0x0F << 4) | (0x40 << 12));
 
   if (e1000_read_reg(E1000_REG_RCTL))
     console_print("[e1000] Driver initialized!\n");
+
+  for (int i = 0; i < 6; ++i) {
+    console_print_hex(my_mac[i]);
+    if (i < 5)
+      console_print(":");
+  }
+  console_print("\n");
 }
 
 void e1000_send_packet(const void *data, uint16_t len) {
   uint8_t *buffer = (uint8_t *)(uintptr_t)tx_ring[tx_current_idx].buffer_addr;
   const uint8_t *src = (const uint8_t *)data;
+  uint16_t packet_len = len;
 
+  if (packet_len < 60)
+    packet_len = 60;
   for (uint16_t i = 0; i < len; ++i) {
     buffer[i] = src[i];
   }
-  tx_ring[tx_current_idx].length = len;
+
+  for (uint16_t i = len; i < packet_len; ++i) {
+    buffer[i] = 0;
+  }
+  tx_ring[tx_current_idx].length = packet_len;
   tx_ring[tx_current_idx].cmd =
       E1000_TX_CMD_EOP | E1000_TX_CMD_IFCS | E1000_TX_CMD_RS;
   tx_ring[tx_current_idx].status = 0;
+
+  uint16_t old_idx = tx_current_idx;
+
+  for (uint16_t i = 0; i < len; ++i) {
+    console_print_hex(buffer[i]);
+    console_print(" ");
+  }
+  console_print("\n");
+  console_print_dec(packet_len);
+  console_print("\n");
 
   tx_current_idx = (tx_current_idx + 1) % NUM_TX_DESCRIPTORS;
   e1000_write_reg(E1000_REG_TDT, tx_current_idx);
@@ -116,13 +151,13 @@ void e1000_poll_rx() {
 
     ethernet_header_t *eth = (ethernet_header_t *)packet_data;
 
-    console_print("SRC MAC: ");
-    for (int i = 0; i < 6; i++) {
-      console_print_hex(eth->src_mac[i]);
-      if (i < 5)
-        console_print(":");
-    }
-    console_print("\n");
+    // console_print("SRC MAC: ");
+    // for (int i = 0; i < 6; i++) {
+    //   console_print_hex(eth->src_mac[i]);
+    //   if (i < 5)
+    //     console_print(":");
+    // }
+    // console_print("\n");
 
     // uint16_t protocol = ntohs(eth->ethertype);
     // if (protocol == ETHERTYPE_IPV4) {
