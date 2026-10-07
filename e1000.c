@@ -7,9 +7,7 @@ static inline uint16_t ntohs(uint16_t x) {
   return (uint16_t)(((x & 0xFF) << 8) | ((x >> 8) & 0xFF));
 }
 
-static inline uint16_t htons(uint16_t x) {
-  return (uint16_t)(((x & 0xFF) << 8) | ((x >> 8) & 0xFF));
-}
+static inline uint16_t htons(uint16_t x) { return ntohs(x); }
 
 static inline uint16_t ntohl(uint32_t x) {
   return (uint32_t)((x & 0x000000FF) << 24) | ((x & 0x0000FF00) << 8) |
@@ -126,13 +124,13 @@ void e1000_send_packet(const void *data, uint16_t len) {
 
   uint16_t old_idx = tx_current_idx;
 
-  for (uint16_t i = 0; i < len; ++i) {
-    console_print_hex(buffer[i]);
-    console_print(" ");
-  }
-  console_print("\n");
-  console_print_dec(packet_len);
-  console_print("\n");
+  // for (uint16_t i = 0; i < len; ++i) {
+  //   console_print_hex(buffer[i]);
+  //   console_print(" ");
+  // }
+  // console_print("\n");
+  // console_print_dec(packet_len);
+  // console_print("\n");
 
   tx_current_idx = (tx_current_idx + 1) % NUM_TX_DESCRIPTORS;
   e1000_write_reg(E1000_REG_TDT, tx_current_idx);
@@ -201,11 +199,11 @@ void e1000_poll_rx() {
       uint16_t opcode = ntohs(arp->operation);
 
       if (opcode == ARP_OP_REQUEST) {
-        console_print("[ARP]Who has ");
+        console_print("[ARP]Found ");
         console_print_ip(arp->dest_ip);
-        console_print("? Tell ");
+        console_print(". Send a message to  ");
         console_print_ip(arp->sender_ip);
-        console_print("\n");
+        console_print(".\n");
 
         for (int i = 0; i < 6; ++i) {
           eth->dest_mac[i] = eth->src_mac[i];

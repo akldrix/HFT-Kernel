@@ -55,7 +55,7 @@ void pci_scan() {
         console_print(" | Slot: ");
         console_print_hex(slot);
         console_print("\n");
-
+        enable_pci_bus_mastering(bus, slot, 0);
         // uint32_t bar0 = read_pci_config_32(bus, slot, 0, 0x10);
         //
         // if ((bar0 & 0x1) == 0) {
