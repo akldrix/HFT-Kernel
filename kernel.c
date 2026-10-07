@@ -29,7 +29,7 @@ void kernel_main(void) {
   console_print("Kernel Prototype\n");
   console_print("--------------------------------------------------------------"
                 "------------------");
-  console_print_hex(0x8086);
+  // console_print_hex(0x8086);
   console_print("\n");
 
   // pci_scan();

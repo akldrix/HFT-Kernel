@@ -1,8 +1,12 @@
 #include "console.h"
 #include <stdint.h>
-
 #define W_WIDTH 80
 #define W_HEIGHT 25
+
+static inline uint16_t ntohl(uint32_t x) {
+  return (uint32_t)((x & 0x000000FF) << 24) | ((x & 0x0000FF00) << 8) |
+         ((x & 0x00FF0000)) | ((x & 0xFF000000));
+}
 
 volatile uint16_t *vga_buffer = (uint16_t *)0xB8000;
 int cursor_x = 0;
@@ -81,4 +85,15 @@ void console_print_dec(uint32_t val) {
     i--;
   }
   console_print(&buffer[i + 1]);
+}
+
+void console_print_char(const char c) { console_putchar(c); }
+
+void console_print_ip(uint8_t ip[4]) {
+  for (int i = 0; i < 4; i++) {
+    console_print_dec(ip[i]);
+    if (i < 3) {
+      console_print_char('.');
+    }
+  }
 }
