@@ -119,4 +119,6 @@ void e1000_init(uintptr_t bar0, BumpAllocator *alloc);
 void e1000_poll_rx(void);
 
 void e1000_send_packet(const void *data, uint16_t len);
+
+void e1000_get_mac(uint8_t mac[6]);
 #endif // !E_1000_H

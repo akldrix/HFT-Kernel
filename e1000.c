@@ -1,18 +1,8 @@
 #include "e1000.h"
 #include "bump_alloc.h"
 #include "console.h"
+#include "net.h"
 #include <stdint.h>
-
-static inline uint16_t ntohs(uint16_t x) {
-  return (uint16_t)(((x & 0xFF) << 8) | ((x >> 8) & 0xFF));
-}
-
-static inline uint16_t htons(uint16_t x) { return ntohs(x); }
-
-static inline uint16_t ntohl(uint32_t x) {
-  return (uint32_t)((x & 0x000000FF) << 24) | ((x & 0x0000FF00) << 8) |
-         ((x & 0x00FF0000)) | ((x & 0xFF000000));
-}
 
 static uintptr_t mmio_base = 0;
 
@@ -30,6 +20,12 @@ void e1000_write_reg(uint16_t reg, uint32_t value) {
 
 uint32_t e1000_read_reg(uint16_t reg) {
   return *(volatile uint32_t *)(mmio_base + reg);
+}
+
+void e1000_get_mac(uint8_t mac[6]) {
+  for (int i = 0; i < 6; i++) {
+    mac[i] = my_mac[i];
+  }
 }
 
 void e1000_init(uintptr_t bar0, BumpAllocator *alloc) {

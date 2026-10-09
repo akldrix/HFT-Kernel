@@ -1,5 +1,6 @@
 #include "bump_alloc.h"
 #include "console.h"
+#include "dhcp.h"
 #include "e1000.h"
 #include "pci.h"
 #include <stdbool.h>
@@ -50,6 +51,8 @@ void kernel_main(void) {
   enable_pci_bus_mastering(bus, slot, 0);
 
   e1000_init(bar0, &kernel_alloc);
+
+  dhcp_send_discover();
 
   // console_print("Entering the loop: \n");
   // uint32_t heartbeat = 0;
