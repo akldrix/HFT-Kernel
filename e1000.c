@@ -1,6 +1,7 @@
 #include "e1000.h"
 #include "bump_alloc.h"
 #include "console.h"
+#include "dhcp.h"
 #include "net.h"
 #include <stdint.h>
 
@@ -179,14 +180,27 @@ void e1000_poll_rx() {
         console_print("Port: ");
         console_print_dec(ntohs(udp->dest_port));
         console_print("\n");
+        if (htons(udp->dest_port) == 68) {
+          dhcp_packet_t *dhcp_offer = (dhcp_packet_t *)payload;
 
-        console_print("Payload: ");
-        for (int i = 0; i < payload_len; ++i) {
-          if (payload[i] >= 32 && payload[i] <= 126) {
-            console_print_char(payload[i]);
+          if (dhcp_offer->op == 2 &&
+              ntohl(dhcp_offer->magic_cookie) == DHCP_MAGIC_COOKIE) {
+            uint8_t offered_ip[4];
+            *(uint32_t *)offered_ip = dhcp_offer->yiaddr;
+
+            console_print("[DHCP] SUCCESS! Offered IP: ");
+            console_print_ip(offered_ip);
+            console_print("\n");
           }
+        } else {
+          console_print("Payload: ");
+          for (int i = 0; i < payload_len; ++i) {
+            if (payload[i] >= 32 && payload[i] <= 126) {
+              console_print_char(payload[i]);
+            }
+          }
+          console_print("\n");
         }
-        console_print("\n");
       }
     } else if (ntohs(eth->ethertype) == ETHERTYPE_ARP) {
       arp_header_t *arp =
