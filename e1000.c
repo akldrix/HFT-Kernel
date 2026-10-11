@@ -119,7 +119,7 @@ void e1000_send_packet(const void *data, uint16_t len) {
       E1000_TX_CMD_EOP | E1000_TX_CMD_IFCS | E1000_TX_CMD_RS;
   tx_ring[tx_current_idx].status = 0;
 
-  uint16_t old_idx = tx_current_idx;
+  // uint16_t old_idx = tx_current_idx;
 
   // for (uint16_t i = 0; i < len; ++i) {
   //   console_print_hex(buffer[i]);

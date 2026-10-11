@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 void dhcp_send_discover(void) {
-  uint8_t packet[512] = {0};
+  uint8_t packet[1024] = {0};
   ethernet_header_t *eth = (ethernet_header_t *)packet;
   ipv4_header_t *ip = (ipv4_header_t *)(packet + sizeof(ethernet_header_t));
   udp_header_t *udp = (udp_header_t *)((uint8_t *)ip + sizeof(ipv4_header_t));
@@ -32,7 +32,7 @@ void dhcp_send_discover(void) {
   ip->src_ip = 0;
   ip->dest_ip = 0xFFFFFFFF;
   ip->checksum = 0;
-  ip->checksum = ipv4_checksum((uint16_t *)ip, sizeof(ipv4_header_t));
+  ip->checksum = ipv4_checksum(ip, sizeof(ipv4_header_t));
 
   udp->src_port = htons(68);
   udp->dest_port = htons(67);
