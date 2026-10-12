@@ -5,7 +5,8 @@
 #include <stdint.h>
 
 void dhcp_send_discover(void) {
-  uint8_t packet[512] = {0};
+  uint8_t packet[sizeof(ethernet_header_t) + sizeof(ipv4_header_t) +
+                 sizeof(udp_header_t) + sizeof(dhcp_packet_t)] = {0};
   ethernet_header_t *eth = (ethernet_header_t *)packet;
   ipv4_header_t *ip = (ipv4_header_t *)(packet + sizeof(ethernet_header_t));
   udp_header_t *udp = (udp_header_t *)((uint8_t *)ip + sizeof(ipv4_header_t));
