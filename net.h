@@ -14,14 +14,18 @@ static inline uint32_t ntohl(uint32_t x) {
 }
 static inline uint32_t htonl(uint32_t x) { return ntohl(x); }
 
-static inline uint16_t ipv4_checksum(uint16_t *ptr, int nbytes) {
+static inline uint16_t ipv4_checksum(const void *data, int nbytes) {
+  const uint8_t *ptr = (uint8_t *)data;
   uint32_t sum = 0;
+
   while (nbytes > 1) {
-    sum += *ptr++;
+    sum += (ptr[0] << 8) | ptr[1];
+    ptr += 2;
     nbytes -= 2;
   }
+
   if (nbytes == 1) {
-    sum += *(uint8_t *)ptr;
+    sum += (ptr[0] << 8);
   }
 
   sum = (sum >> 16) + (sum & 0xFFFF);
