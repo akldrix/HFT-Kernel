@@ -191,6 +191,10 @@ void e1000_poll_rx() {
             console_print("[DHCP] SUCCESS! Offered IP: ");
             console_print_ip(offered_ip);
             console_print("\n");
+
+            console_print("[DHCP] msg type: ");
+            console_print_dec(dhcp_get_msg_type(dhcp_offer, payload_len));
+            console_print("\n");
           }
         } else {
           console_print("Payload: ");

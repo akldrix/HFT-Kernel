@@ -2,7 +2,38 @@
 #include "console.h"
 #include "e1000.h"
 #include "net.h"
+#include <stddef.h>
 #include <stdint.h>
+
+static const uint8_t *dhcp_find_opt(const dhcp_packet_t *packet, uint16_t area,
+                                    uint8_t code, uint8_t *out_len) {
+  const uint8_t *p = packet->options;
+  const uint8_t *end = p + area;
+
+  while (p < end) {
+    uint8_t c = *p++;
+
+    if (c == 255)
+      break;
+    if (c == 0)
+      continue;
+
+    if (p >= end)
+      break;
+    uint8_t l = *p++;
+
+    if (p + l > end)
+      break;
+
+    if (c == code) {
+      *out_len = l;
+      return p;
+    }
+    p += l;
+  }
+
+  return 0;
+}
 
 void dhcp_send_discover(void) {
   uint8_t packet[sizeof(ethernet_header_t) + sizeof(ipv4_header_t) +
@@ -43,7 +74,7 @@ void dhcp_send_discover(void) {
   dhcp->op = 1;
   dhcp->htype = 1;
   dhcp->hlen = 6;
-  dhcp->xid = htonl(0x12345678);
+  dhcp->xid = htonl(DHCP_XID);
   dhcp->flags = htons(0x8000);
 
   for (int i = 0; i < 6; i++) {
@@ -71,4 +102,22 @@ void dhcp_send_discover(void) {
   e1000_send_packet(packet, total_len);
 
   console_print("[DHCP] Discover broadcast sent\n");
+}
+
+uint8_t dhcp_get_msg_type(const dhcp_packet_t *packet, uint16_t payload_len) {
+  if (payload_len < offsetof(dhcp_packet_t, options))
+    return 0;
+  if (packet->op != 2 || ntohl(packet->magic_cookie) != DHCP_MAGIC_COOKIE)
+    return 0;
+
+  if (ntohl(packet->xid) != DHCP_XID)
+    return 0;
+
+  uint16_t area = payload_len - offsetof(dhcp_packet_t, options);
+  if (area > DHCP_OPTIONS_LEN)
+    area = DHCP_OPTIONS_LEN;
+  uint8_t l;
+  const uint8_t *t = dhcp_find_opt(packet, area, 53, &l);
+
+  return (t && l == 1) ? *t : 0;
 }

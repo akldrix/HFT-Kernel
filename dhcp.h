@@ -8,6 +8,10 @@
 #define DHCP_FILE_LEN 128
 #define DHCP_OPTIONS_LEN 312
 #define DHCP_MAGIC_COOKIE 0x63825363
+#define DHCP_XID 0x12345678
+
+#define DHCP_SERVER_PORT 67
+#define DHCP_CLIENT_PORT 68
 
 typedef struct __attribute__((packed)) {
   uint8_t op;
@@ -29,5 +33,9 @@ typedef struct __attribute__((packed)) {
 } dhcp_packet_t;
 
 void dhcp_send_discover(void);
+uint8_t dhcp_get_msg_type(const dhcp_packet_t *packet, uint16_t payload_len);
+
+void dhcp_process_offer(dhcp_packet_t *packet, uint32_t expected_xid,
+                        uint32_t *offered_ip, uint32_t *server_ip);
 
 #endif // !DHCP_H

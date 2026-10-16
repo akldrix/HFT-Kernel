@@ -30,7 +30,7 @@ static inline uint16_t ipv4_checksum(const void *data, int nbytes) {
 
   sum = (sum >> 16) + (sum & 0xFFFF);
   sum += (sum >> 16);
-  return (uint16_t)~sum;
+  return htons((uint16_t)~sum);
 }
 
 #endif // !NET_H
