@@ -13,6 +13,12 @@
 #define DHCP_SERVER_PORT 67
 #define DHCP_CLIENT_PORT 68
 
+#define DHCP_MSGTYPE_DISCOVER 1
+#define DHCP_MSGTYPE_OFFER 2
+#define DHCP_MSGTYPE_REQUEST 3
+#define DHCP_MSGTYPE_ACK 5
+#define DHCP_MSGTYPE_NAK 6
+
 typedef struct __attribute__((packed)) {
   uint8_t op;
   uint8_t htype;
@@ -31,6 +37,17 @@ typedef struct __attribute__((packed)) {
   uint32_t magic_cookie;
   uint8_t options[DHCP_OPTIONS_LEN];
 } dhcp_packet_t;
+
+typedef enum {
+  DHCP_IDLE,
+  DHCP_DISCOVER_SENT,
+  DHCP_REQUEST_SENT,
+  DHCP_BOUND
+} dhcp_state_t;
+
+extern dhcp_state_t dhcp_state;
+
+void dhcp_handle_packet(const dhcp_packet_t *packet, uint16_t payload_len);
 
 void dhcp_send_discover(void);
 uint8_t dhcp_get_msg_type(const dhcp_packet_t *packet, uint16_t payload_len);

@@ -5,6 +5,19 @@
 #include <stddef.h>
 #include <stdint.h>
 
+dhcp_state_t dhcp_state = DHCP_IDLE;
+
+static uint8_t *dhcp_add_opt(uint8_t *p, uint8_t code, uint8_t len,
+                             const uint8_t *data) {
+  *p++ = code;
+  *p++ = len;
+
+  for (uint8_t i = 0; i < len; i++) {
+    *p++ = data[i];
+  }
+  return p;
+}
+
 static const uint8_t *dhcp_find_opt(const dhcp_packet_t *packet, uint16_t area,
                                     uint8_t code, uint8_t *out_len) {
   const uint8_t *p = packet->options;
@@ -35,7 +48,9 @@ static const uint8_t *dhcp_find_opt(const dhcp_packet_t *packet, uint16_t area,
   return 0;
 }
 
-void dhcp_send_discover(void) {
+static void dhcp_send(uint8_t msg_type, const uint8_t *req_ip,
+                      const uint8_t *serv_id) {
+
   uint8_t packet[sizeof(ethernet_header_t) + sizeof(ipv4_header_t) +
                  sizeof(udp_header_t) + sizeof(dhcp_packet_t)] = {0};
   ethernet_header_t *eth = (ethernet_header_t *)packet;
@@ -84,15 +99,17 @@ void dhcp_send_discover(void) {
 
   uint8_t *opt = dhcp->options;
 
-  *opt++ = 53;
-  *opt++ = 1;
-  *opt++ = 1;
+  static const uint8_t params[] = {1, 3, 6};
 
-  *opt++ = 55;
-  *opt++ = 3;
-  *opt++ = 1;
-  *opt++ = 3;
-  *opt++ = 6;
+  opt = dhcp_add_opt(opt, 53, 1, &msg_type);
+
+  if (req_ip) {
+    dhcp_add_opt(opt, 50, 4, req_ip);
+  }
+  if (serv_id) {
+    dhcp_add_opt(opt, 54, 4, serv_id);
+  }
+  opt = dhcp_add_opt(opt, 55, 3, params);
 
   *opt++ = 255;
 
@@ -100,7 +117,11 @@ void dhcp_send_discover(void) {
                        sizeof(udp_header_t) + sizeof(dhcp_packet_t);
 
   e1000_send_packet(packet, total_len);
+}
 
+void dhcp_send_discover(void) {
+  dhcp_state = DHCP_DISCOVER_SENT;
+  dhcp_send(DHCP_MSGTYPE_DISCOVER, 0, 0);
   console_print("[DHCP] Discover broadcast sent\n");
 }
 
