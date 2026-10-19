@@ -15,6 +15,13 @@ static uint16_t tx_current_idx = 0;
 
 static uint8_t my_mac[6] = {0};
 
+static int ip_equal(const uint8_t *a, const uint8_t *b) {
+  for (int i = 0; i < 4; i++)
+    if (a[i] != b[i])
+      return 0;
+  return 1;
+}
+
 void e1000_write_reg(uint16_t reg, uint32_t value) {
   *(volatile uint32_t *)(mmio_base + reg) = value;
 }
@@ -198,7 +205,8 @@ void e1000_poll_rx() {
 
       uint16_t opcode = ntohs(arp->operation);
 
-      if (opcode == ARP_OP_REQUEST) {
+      if (opcode == ARP_OP_REQUEST && dhcp_state == DHCP_BOUND &&
+          ip_equal(arp->dest_ip, my_ip)) {
         console_print("[ARP]Found ");
         console_print_ip(arp->dest_ip);
         console_print(". Send a message to  ");
@@ -219,10 +227,8 @@ void e1000_poll_rx() {
         for (int i = 0; i < 6; ++i)
           arp->sender_mac[i] = my_mac[i];
 
-        arp->sender_ip[0] = 10;
-        arp->sender_ip[1] = 0;
-        arp->sender_ip[2] = 2;
-        arp->sender_ip[3] = 15;
+        for (int i = 0; i < 4; i++)
+          arp->sender_ip[i] = my_ip[i];
 
         e1000_send_packet(packet_data,
                           sizeof(ethernet_header_t) + sizeof(arp_header_t));

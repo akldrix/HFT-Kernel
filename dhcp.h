@@ -45,6 +45,11 @@ typedef enum {
   DHCP_BOUND
 } dhcp_state_t;
 
+extern uint8_t my_ip[4];
+extern uint8_t net_mask[4];
+extern uint8_t gateway_ip[4];
+extern uint8_t dns_ip[4];
+
 extern dhcp_state_t dhcp_state;
 
 void dhcp_handle_packet(const dhcp_packet_t *packet, uint16_t payload_len);

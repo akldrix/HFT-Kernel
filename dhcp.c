@@ -7,6 +7,11 @@
 
 dhcp_state_t dhcp_state = DHCP_IDLE;
 
+uint8_t my_ip[4] = {0};
+uint8_t net_mask[4] = {0};
+uint8_t gateway_ip[4] = {0};
+uint8_t dns_ip[4] = {0};
+
 static uint8_t *dhcp_add_opt(uint8_t *p, uint8_t code, uint8_t len,
                              const uint8_t *data) {
   *p++ = code;
@@ -180,6 +185,43 @@ void dhcp_handle_packet(const dhcp_packet_t *packet, uint16_t payload_len) {
     dhcp_send(DHCP_MSGTYPE_REQUEST, offered, server);
     dhcp_state = DHCP_REQUEST_SENT;
     console_print("[DHCP] Request sent\n");
+  } else if (type == DHCP_MSGTYPE_ACK && dhcp_state == DHCP_REQUEST_SENT) {
+    uint16_t area = payload_len - offsetof(dhcp_packet_t, options);
+    if (area > DHCP_OPTIONS_LEN)
+      area = DHCP_OPTIONS_LEN;
+    const uint8_t *y = (const uint8_t *)&packet->yiaddr;
+    for (int i = 0; i < 4; i++) {
+      my_ip[i] = y[i];
+    }
+
+    uint8_t l;
+    const uint8_t *o;
+
+    if ((o = dhcp_find_opt(packet, area, 1, &l)) && l == 4)
+      for (int i = 0; i < 4; i++)
+        net_mask[i] = o[i];
+    if ((o = dhcp_find_opt(packet, area, 3, &l)) && l >= 4)
+      for (int i = 0; i < 4; i++)
+        gateway_ip[i] = o[i];
+    if ((o = dhcp_find_opt(packet, area, 6, &l)) && l >= 4)
+      for (int i = 0; i < 4; i++)
+        dns_ip[i] = o[i];
+
+    dhcp_state = DHCP_BOUND;
+
+    console_print("[DHCP] BOUND IP: ");
+    console_print_ip(my_ip);
+    console_print(" Mask: ");
+    console_print_ip(net_mask);
+    console_print(" Gateway: ");
+    console_print_ip(gateway_ip);
+    console_print(" DNS: ");
+    console_print_ip(dns_ip);
+    console_print("\n");
+
+  } else if (type == DHCP_MSGTYPE_NAK) {
+    dhcp_state = DHCP_IDLE;
+    console_print("[DHCP] NAK received\n");
   } else {
     console_print("[DHCP] Other message type: ");
     console_print_dec(type);
