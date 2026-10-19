@@ -52,7 +52,4 @@ void dhcp_handle_packet(const dhcp_packet_t *packet, uint16_t payload_len);
 void dhcp_send_discover(void);
 uint8_t dhcp_get_msg_type(const dhcp_packet_t *packet, uint16_t payload_len);
 
-void dhcp_process_offer(dhcp_packet_t *packet, uint32_t expected_xid,
-                        uint32_t *offered_ip, uint32_t *server_ip);
-
 #endif // !DHCP_H

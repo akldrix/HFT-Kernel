@@ -104,10 +104,10 @@ static void dhcp_send(uint8_t msg_type, const uint8_t *req_ip,
   opt = dhcp_add_opt(opt, 53, 1, &msg_type);
 
   if (req_ip) {
-    dhcp_add_opt(opt, 50, 4, req_ip);
+    opt = dhcp_add_opt(opt, 50, 4, req_ip);
   }
   if (serv_id) {
-    dhcp_add_opt(opt, 54, 4, serv_id);
+    opt = dhcp_add_opt(opt, 54, 4, serv_id);
   }
   opt = dhcp_add_opt(opt, 55, 3, params);
 
@@ -141,4 +141,48 @@ uint8_t dhcp_get_msg_type(const dhcp_packet_t *packet, uint16_t payload_len) {
   const uint8_t *t = dhcp_find_opt(packet, area, 53, &l);
 
   return (t && l == 1) ? *t : 0;
+}
+
+void dhcp_handle_packet(const dhcp_packet_t *packet, uint16_t payload_len) {
+  uint8_t type = dhcp_get_msg_type(packet, payload_len);
+
+  if (type == 0)
+    return;
+
+  if (type == DHCP_MSGTYPE_OFFER && dhcp_state == DHCP_DISCOVER_SENT) {
+    uint16_t area = payload_len - offsetof(dhcp_packet_t, options);
+
+    if (area > DHCP_OPTIONS_LEN)
+      area = DHCP_OPTIONS_LEN;
+
+    uint8_t l;
+
+    const uint8_t *sid = dhcp_find_opt(packet, area, 54, &l);
+
+    if (!sid || l != 4)
+      return;
+
+    uint8_t offered[4], server[4];
+
+    const uint8_t *y = (const uint8_t *)&packet->yiaddr;
+
+    for (int i = 0; i < 4; i++) {
+      offered[i] = y[i];
+      server[i] = sid[i];
+    }
+
+    console_print("[DHCP] Offer from: ");
+    console_print_ip(server);
+    console_print(", IP: ");
+    console_print_ip(offered);
+    console_print("\n");
+
+    dhcp_send(DHCP_MSGTYPE_REQUEST, offered, server);
+    dhcp_state = DHCP_REQUEST_SENT;
+    console_print("[DHCP] Request sent\n");
+  } else {
+    console_print("[DHCP] Other message type: ");
+    console_print_dec(type);
+    console_print("\n");
+  }
 }

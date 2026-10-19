@@ -181,21 +181,7 @@ void e1000_poll_rx() {
         console_print_dec(ntohs(udp->dest_port));
         console_print("\n");
         if (htons(udp->dest_port) == 68) {
-          dhcp_packet_t *dhcp_offer = (dhcp_packet_t *)payload;
-
-          if (dhcp_offer->op == 2 &&
-              ntohl(dhcp_offer->magic_cookie) == DHCP_MAGIC_COOKIE) {
-            uint8_t offered_ip[4];
-            *(uint32_t *)offered_ip = dhcp_offer->yiaddr;
-
-            console_print("[DHCP] SUCCESS! Offered IP: ");
-            console_print_ip(offered_ip);
-            console_print("\n");
-
-            console_print("[DHCP] msg type: ");
-            console_print_dec(dhcp_get_msg_type(dhcp_offer, payload_len));
-            console_print("\n");
-          }
+          dhcp_handle_packet((dhcp_packet_t *)payload, payload_len);
         } else {
           console_print("Payload: ");
           for (int i = 0; i < payload_len; ++i) {
