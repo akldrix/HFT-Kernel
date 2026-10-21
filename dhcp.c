@@ -81,8 +81,12 @@ static void dhcp_send(uint8_t msg_type, const uint8_t *req_ip,
   ip->flags_fragoff = 0;
   ip->ttl = 64;
   ip->protocol = PROTOCOL_UDP;
-  ip->src_ip = 0;
-  ip->dest_ip = 0xFFFFFFFF;
+
+  for (int i = 0; i < 4; i++) {
+    ip->src_ip[i] = 0;
+    ip->dest_ip[i] = 0xFF;
+  }
+
   ip->checksum = 0;
   ip->checksum = ipv4_checksum((uint16_t *)ip, sizeof(ipv4_header_t));
 

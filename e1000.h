@@ -84,8 +84,8 @@ typedef struct __attribute__((packed)) {
   uint8_t ttl;
   uint8_t protocol;
   uint16_t checksum;
-  uint32_t src_ip;
-  uint32_t dest_ip;
+  uint8_t src_ip[4];
+  uint8_t dest_ip[4];
 
 } ipv4_header_t;
 
