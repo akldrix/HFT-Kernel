@@ -16,6 +16,17 @@ void console_clear() {
   cursor_y = 0;
 }
 
+static void console_scroll(void) {
+  for (int y = 1; y < W_HEIGHT; y++) {
+    for (int x = 0; x < W_WIDTH; x++) {
+      vga_buffer[(y - 1) * W_WIDTH + x] = vga_buffer[y * W_WIDTH + x];
+    }
+  }
+  for (int x = 0; x < W_WIDTH; x++) {
+    vga_buffer[(W_HEIGHT - 1) * W_WIDTH + x] = (uint16_t)' ' | (0xFF < 8);
+  }
+}
+
 void console_putchar(char c) {
   if (c == '\n') {
     cursor_x = 0;
@@ -29,8 +40,10 @@ void console_putchar(char c) {
     cursor_x = 0;
   }
 
-  if (cursor_y >= W_HEIGHT)
-    cursor_y = 0;
+  if (cursor_y >= W_HEIGHT) {
+    console_scroll();
+    cursor_y = W_HEIGHT - 1;
+  }
 }
 
 void console_print(const char *str) {

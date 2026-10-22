@@ -199,6 +199,26 @@ void e1000_poll_rx() {
           console_print_dec(payload_len);
           console_print("\n");
 
+          for (int i = 0; i < 6; ++i) {
+            eth->dest_mac[i] = eth->src_mac[i];
+            eth->src_mac[i] = my_mac[i];
+          }
+
+          for (int i = 0; i < 4; ++i) {
+            uint8_t t_ip = ip->src_ip[i];
+
+            ip->src_ip[i] = ip->dest_ip[i];
+            ip->dest_ip[i] = t_ip;
+          }
+          uint16_t t_port = udp->src_port;
+
+          udp->src_port = udp->dest_port;
+          udp->dest_port = t_port;
+
+          e1000_send_packet(packet_data,
+                            sizeof(ethernet_header_t) + ntohs(ip->total_len));
+          console_print("[UDP] Echo sent\n");
+
         } else {
           console_print("Payload: ");
           for (int i = 0; i < payload_len; ++i) {
