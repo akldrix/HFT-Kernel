@@ -82,9 +82,9 @@ void console_print_dec(uint32_t val) {
     return;
   }
 
-  char buffer[8];
-  buffer[7] = '\0';
-  int i = 6;
+  char buffer[11];
+  buffer[10] = '\0';
+  int i = 9;
 
   while (val > 0 && i >= 0) {
     int remainder = val % 10;
