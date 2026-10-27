@@ -3,6 +3,7 @@
 #include "dhcp.h"
 #include "e1000.h"
 #include "pci.h"
+#include "serial.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -30,9 +31,11 @@ void kernel_main(void) {
   console_print("Kernel Prototype\n");
   console_print("--------------------------------------------------------------"
                 "------------------");
+  console_print("\n");
 
   // console_print_hex(0x8086);
-  console_print("\n");
+  serial_init();
+  serial_printl("[serial] started\n");
 
   // pci_scan();
   //
