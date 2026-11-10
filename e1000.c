@@ -3,6 +3,7 @@
 #include "console.h"
 #include "dhcp.h"
 #include "net.h"
+#include "serial.h"
 #include <stdint.h>
 
 static uintptr_t mmio_base = 0;
@@ -83,7 +84,7 @@ void e1000_init(uintptr_t bar0, BumpAllocator *alloc) {
     uint8_t *buffer = (uint8_t *)bump_alloc(alloc, 2048, 16);
     tx_ring[i].buffer_addr = (uint64_t)(uintptr_t)buffer;
     tx_ring[i].cmd = 0;
-    tx_ring[i].status = 0;
+    tx_ring[i].status = 1;
   }
 
   e1000_write_reg(E1000_REG_TDBAL, (uint32_t)(uintptr_t)tx_ring);
@@ -114,6 +115,18 @@ void e1000_send_packet(const void *data, uint16_t len) {
 
   if (packet_len < 60)
     packet_len = 60;
+
+  if (packet_len > 2048)
+    return;
+
+  uint32_t spins = 0;
+
+  while (!(tx_ring[tx_current_idx].status & 0x01)) {
+    if (++spins > 1000000) {
+      console_print("[e1000] TX ring stuck\n");
+      return;
+    }
+  }
   for (uint16_t i = 0; i < len; ++i) {
     buffer[i] = src[i];
   }
@@ -126,8 +139,6 @@ void e1000_send_packet(const void *data, uint16_t len) {
       E1000_TX_CMD_EOP | E1000_TX_CMD_IFCS | E1000_TX_CMD_RS;
   tx_ring[tx_current_idx].status = 0;
 
-  uint16_t old_idx = tx_current_idx;
-
   // for (uint16_t i = 0; i < len; ++i) {
   //   console_print_hex(buffer[i]);
   //   console_print(" ");
@@ -137,6 +148,8 @@ void e1000_send_packet(const void *data, uint16_t len) {
   // console_print("\n");
 
   tx_current_idx = (tx_current_idx + 1) % NUM_TX_DESCRIPTORS;
+
+  __asm__ volatile("" ::: "memory");
   e1000_write_reg(E1000_REG_TDT, tx_current_idx);
 }
 
@@ -184,9 +197,14 @@ void e1000_poll_rx() {
         uint16_t payload_len = ntohs(udp->len) - sizeof(udp_header_t);
 
         console_print("Incoming UDP Detectced\n");
+        serial_printl("Incoming UDP Detectced\n");
         console_print("Port: ");
+        serial_printl("Port: ");
         console_print_dec(ntohs(udp->dest_port));
+        serial_print_dec(ntohs(udp->dest_port));
+
         console_print("\n");
+        serial_printl("\n");
         if (htons(udp->dest_port) == 68) {
           dhcp_handle_packet((dhcp_packet_t *)payload, payload_len);
         } else if (ntohs(udp->dest_port) == 5555 && dhcp_state == DHCP_BOUND &&

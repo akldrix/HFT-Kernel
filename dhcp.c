@@ -2,6 +2,7 @@
 #include "console.h"
 #include "e1000.h"
 #include "net.h"
+#include "serial.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -214,14 +215,23 @@ void dhcp_handle_packet(const dhcp_packet_t *packet, uint16_t payload_len) {
     dhcp_state = DHCP_BOUND;
 
     console_print("[DHCP] BOUND IP: ");
+    serial_printl("[DHCP] BOUND IP: ");
     console_print_ip(my_ip);
+    serial_print_ip(my_ip);
     console_print(" Mask: ");
+    serial_printl(" Mask: ");
     console_print_ip(net_mask);
+    serial_print_ip(net_mask);
     console_print(" Gateway: ");
+    serial_printl(" Gateway: ");
     console_print_ip(gateway_ip);
+    serial_print_ip(gateway_ip);
     console_print(" DNS: ");
+    serial_printl(" DNS: ");
     console_print_ip(dns_ip);
+    serial_print_ip(dns_ip);
     console_print("\n");
+    serial_printl("\n");
 
   } else if (type == DHCP_MSGTYPE_NAK) {
     dhcp_state = DHCP_IDLE;

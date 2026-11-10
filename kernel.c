@@ -3,6 +3,8 @@
 #include "dhcp.h"
 #include "e1000.h"
 #include "pci.h"
+#include "serial.h"
+#include "tsc.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -30,8 +32,18 @@ void kernel_main(void) {
   console_print("Kernel Prototype\n");
   console_print("--------------------------------------------------------------"
                 "------------------");
-  // console_print_hex(0x8086);
   console_print("\n");
+
+  // console_print_hex(0x8086);
+  serial_init();
+  serial_printl("[serial] started\n");
+  for (int i = 0; i < 10000; i++) {
+    uint64_t a = rdtsc();
+    uint64_t b = rdtsc();
+    serial_printl("rdtsc overhead: ");
+    serial_print_dec((uint32_t)(b - a));
+    serial_putc('\n');
+  }
 
   // pci_scan();
   //
