@@ -3,8 +3,14 @@
 #include "console.h"
 #include "dhcp.h"
 #include "net.h"
-#include "serial.h"
+
+#include "stats.h"
+#include "tsc.h"
 #include <stdint.h>
+
+#ifdef BENCH
+static uint64_t tx_tsc_before = 0, tx_tsc_after = 0;
+#endif
 
 static uintptr_t mmio_base = 0;
 
@@ -150,20 +156,33 @@ void e1000_send_packet(const void *data, uint16_t len) {
   tx_current_idx = (tx_current_idx + 1) % NUM_TX_DESCRIPTORS;
 
   __asm__ volatile("" ::: "memory");
+#ifdef BENCH
+  tx_tsc_before = rdtsc();
+#endif /* ifdef BENCH */
   e1000_write_reg(E1000_REG_TDT, tx_current_idx);
+#ifdef BENCH
+  tx_tsc_after = rdtsc();
+#endif /* ifdef BENCH                                                          \
+  tx_tsc_after = rdtsc(); */
 }
 
 void e1000_poll_rx() {
   if (rx_ring[rx_current_idx].status & 0x01) {
+    __asm__ volatile("" ::: "memory");
+
+#ifdef BENCH
+    uint64_t t0 = rdtsc();
+#endif /* ifdef BENCH */
     uint16_t len = rx_ring[rx_current_idx].length;
 
     uint8_t *packet_data =
         (uint8_t *)(uintptr_t)rx_ring[rx_current_idx].buffer_addr;
 
+#ifndef BENCH
     console_print("[NET] Size of received packet: ");
     console_print_dec(len);
     console_print("\n");
-
+#endif
     ethernet_header_t *eth = (ethernet_header_t *)packet_data;
 
     // console_print("SRC MAC: ");
@@ -196,19 +215,17 @@ void e1000_poll_rx() {
         char *payload = (char *)udp + sizeof(udp_header_t);
         uint16_t payload_len = ntohs(udp->len) - sizeof(udp_header_t);
 
+#ifndef BENCH
         console_print("Incoming UDP Detectced\n");
-        serial_printl("Incoming UDP Detectced\n");
         console_print("Port: ");
-        serial_printl("Port: ");
         console_print_dec(ntohs(udp->dest_port));
-        serial_print_dec(ntohs(udp->dest_port));
-
         console_print("\n");
-        serial_printl("\n");
+#endif
         if (htons(udp->dest_port) == 68) {
           dhcp_handle_packet((dhcp_packet_t *)payload, payload_len);
         } else if (ntohs(udp->dest_port) == 5555 && dhcp_state == DHCP_BOUND &&
                    ip_equal(ip->dest_ip, my_ip)) {
+#ifndef BENCH
           console_print("[UDP] From: ");
           console_print_ip(ip->src_ip);
           console_print(":");
@@ -216,6 +233,7 @@ void e1000_poll_rx() {
           console_print(", payload length: ");
           console_print_dec(payload_len);
           console_print("\n");
+#endif
 
           for (int i = 0; i < 6; ++i) {
             eth->dest_mac[i] = eth->src_mac[i];
@@ -236,6 +254,10 @@ void e1000_poll_rx() {
           e1000_send_packet(packet_data,
                             sizeof(ethernet_header_t) + ntohs(ip->total_len));
           console_print("[UDP] Echo sent\n");
+#ifdef BENCH
+          stats_add((uint32_t)(tx_tsc_before - t0),
+                    (uint32_t)(tx_tsc_after - tx_tsc_before));
+#endif
 
         } else {
           console_print("Payload: ");

@@ -36,14 +36,14 @@ void kernel_main(void) {
 
   // console_print_hex(0x8086);
   serial_init();
-  serial_printl("[serial] started\n");
-  for (int i = 0; i < 10000; i++) {
-    uint64_t a = rdtsc();
-    uint64_t b = rdtsc();
-    serial_printl("rdtsc overhead: ");
-    serial_print_dec((uint32_t)(b - a));
-    serial_putc('\n');
-  }
+  // serial_printl("[serial] started\n");
+  // for (int i = 0; i < 10000; i++) {
+  //   uint64_t a = rdtsc();
+  //   uint64_t b = rdtsc();
+  //   serial_printl("rdtsc overhead: ");
+  //   serial_print_dec((uint32_t)(b - a));
+  //   serial_putc('\n');
+  // }
 
   // pci_scan();
   //
